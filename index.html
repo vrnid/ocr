@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OCR识别工具</title>
+    <title>OCR识别</title>
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Inter 字体 -->
@@ -116,20 +116,20 @@
             </button>
         </div>
 
-        <h1 class="text-3xl sm:text-4xl font-bold text-center mb-6 tracking-wide text-gray-800">图片信息提取工具</h1>
+        <h1 class="text-3xl sm:text-4xl font-bold text-center mb-6 tracking-wide text-gray-800">OCR识别工具</h1>
         
         <!-- 说明区域 -->
         <p class="text-center text-gray-600 mb-8 leading-relaxed">
             将包含信息的图片粘贴到下面的区域，工具将自动识别并提取文字。
             <br>
-            为了安全，请先在下方输入你的 Google Gemini API 密钥。
+            在下方输入你的 Google API 密钥, 只在本地保存。
             <br>
             你可以点击选择每一行文字进行复制。
         </p>
         
         <!-- API 密钥输入区域 -->
         <div id="api-key-input-section" class="w-full flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
-            <input type="password" id="api-key-input" placeholder="请输入你的 Gemini API 密钥" class="w-full sm:w-2/3 p-3 rounded-lg neumorphism-inner-light focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800">
+            <input type="password" id="api-key-input" placeholder=" Google API 密钥" class="w-full sm:w-2/3 p-3 rounded-lg neumorphism-inner-light focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800">
             <button id="save-key-button" class="w-full sm:w-1/3 py-3 px-8 text-white font-bold rounded-full bg-indigo-600 hover:bg-indigo-700 transition-transform duration-200 transform hover:scale-105 shadow-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/50 neumorphism-button-light">
                 保存密钥
             </button>
@@ -445,3 +445,4 @@
     </script>
 </body>
 </html>
+
