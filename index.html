@@ -122,8 +122,19 @@
         <p class="text-center text-gray-600 mb-8 leading-relaxed">
             将包含信息的图片粘贴到下面的区域，工具将自动识别并提取文字。
             <br>
+            为了安全，请先在下方输入你的 Google Gemini API 密钥。
+            <br>
             你可以点击选择每一行文字进行复制。
         </p>
+        
+        <!-- API 密钥输入区域 -->
+        <div id="api-key-input-section" class="w-full flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+            <input type="password" id="api-key-input" placeholder="请输入你的 Gemini API 密钥" class="w-full sm:w-2/3 p-3 rounded-lg neumorphism-inner-light focus:outline-none focus:ring-2 focus:ring-indigo-500 text-gray-800">
+            <button id="save-key-button" class="w-full sm:w-1/3 py-3 px-8 text-white font-bold rounded-full bg-indigo-600 hover:bg-indigo-700 transition-transform duration-200 transform hover:scale-105 shadow-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/50 neumorphism-button-light">
+                保存密钥
+            </button>
+        </div>
+        <p id="api-key-status" class="text-center text-sm mb-6"></p>
 
         <!-- 粘贴区域 -->
         <div id="paste-area" class="border-4 border-dashed border-gray-400 rounded-xl p-8 text-center text-gray-500 hover:border-indigo-500 transition-colors duration-300 cursor-pointer neumorphism-inner-light">
@@ -178,6 +189,9 @@
         const extractedResultsDiv = document.getElementById('extracted-results');
         const copyButton = document.getElementById('copy-button');
         const messageBox = document.getElementById('message-box');
+        const apiKeyInput = document.getElementById('api-key-input');
+        const saveKeyButton = document.getElementById('save-key-button');
+        const apiKeyStatus = document.getElementById('api-key-status');
 
         // 主题切换功能
         let isDarkMode = false;
@@ -200,11 +214,16 @@
                 resultsCard.classList.add('bg-[#2a2a2a]');
                 moonIcon.classList.add('hidden');
                 sunIcon.classList.remove('hidden');
-                // 确保所有 .line-item 元素更新样式
                 document.querySelectorAll('.line-item').forEach(item => {
                     item.classList.remove('line-item-light');
                     item.classList.add('line-item-dark');
                 });
+                apiKeyInput.classList.remove('neumorphism-inner-light');
+                apiKeyInput.classList.add('neumorphism-inner-dark');
+                apiKeyInput.classList.remove('text-gray-800');
+                apiKeyInput.classList.add('text-white');
+                saveKeyButton.classList.remove('neumorphism-button-light');
+                saveKeyButton.classList.add('neumorphism-button-dark');
             } else {
                 body.classList.remove('dark-mode');
                 body.classList.add('light-mode');
@@ -222,11 +241,46 @@
                 resultsCard.classList.add('bg-[#e0e5ec]');
                 moonIcon.classList.remove('hidden');
                 sunIcon.classList.add('hidden');
-                // 确保所有 .line-item 元素更新样式
                 document.querySelectorAll('.line-item').forEach(item => {
                     item.classList.remove('line-item-dark');
                     item.classList.add('line-item-light');
                 });
+                apiKeyInput.classList.remove('neumorphism-inner-dark');
+                apiKeyInput.classList.add('neumorphism-inner-light');
+                apiKeyInput.classList.remove('text-white');
+                apiKeyInput.classList.add('text-gray-800');
+                saveKeyButton.classList.remove('neumorphism-button-dark');
+                saveKeyButton.classList.add('neumorphism-button-light');
+            }
+        });
+
+        // 页面加载时检查本地存储中的密钥
+        document.addEventListener('DOMContentLoaded', () => {
+            const storedKey = localStorage.getItem('geminiApiKey');
+            if (storedKey) {
+                apiKeyInput.value = storedKey;
+                apiKeyStatus.textContent = "API 密钥已保存。";
+                apiKeyStatus.classList.add('text-green-600');
+            } else {
+                apiKeyStatus.textContent = "请先输入并保存API密钥。";
+                apiKeyStatus.classList.add('text-red-500');
+            }
+        });
+
+        // 保存API密钥到本地存储
+        saveKeyButton.addEventListener('click', () => {
+            const key = apiKeyInput.value.trim();
+            if (key) {
+                localStorage.setItem('geminiApiKey', key);
+                apiKeyStatus.textContent = "API 密钥已成功保存！";
+                apiKeyStatus.classList.remove('text-red-500');
+                apiKeyStatus.classList.add('text-green-600');
+                showMessage('API 密钥已保存。', 'bg-green-600');
+            } else {
+                apiKeyStatus.textContent = "密钥不能为空！";
+                apiKeyStatus.classList.remove('text-green-600');
+                apiKeyStatus.classList.add('text-red-500');
+                showMessage('密钥不能为空，请重新输入。', 'bg-yellow-500');
             }
         });
 
@@ -249,7 +303,12 @@
         async function recognizeImageWithLLM(base64Data) {
             const systemPrompt = "You are a highly accurate OCR engine. Your task is to extract all text content from the provided image. Do not add any extra information, just the extracted text.";
             const userQuery = "Extract all text from this image.";
-            const apiKey = "";
+            const apiKey = localStorage.getItem('geminiApiKey');
+
+            if (!apiKey) {
+                throw new Error('API key is not set. Please enter your key and save it.');
+            }
+
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
 
             const payload = {
@@ -275,6 +334,12 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('API Error:', errorData);
+                throw new Error(`API request failed with status ${response.status}: ${errorData.error.message}`);
+            }
 
             const result = await response.json();
             const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || '';
@@ -305,7 +370,11 @@
                 } catch (error) {
                     console.error('识别失败:', error);
                     loadingDiv.classList.add('hidden');
-                    showMessage('文字识别失败。', 'bg-red-500');
+                    if (error.message.includes('API key is not set')) {
+                        showMessage('请先输入并保存API密钥。', 'bg-red-500');
+                    } else {
+                        showMessage('文字识别失败。', 'bg-red-500');
+                    }
                 }
             };
             reader.readAsDataURL(blob);
