@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OCR识别工具</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Inter 字体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .neumorphism-inner-light {
+            border-radius: 20px;
+            background: #e0e5ec;
+            box-shadow: inset 5px 5px 10px #c4c9d4, inset -5px -5px 10px #ffffff;
+        }
+        .neumorphism-inner-dark {
+            border-radius: 20px;
+            background: #1e1e1e;
+            box-shadow: inset 5px 5px 10px #0a0a0a, inset -5px -5px 10px #2a2a2a;
+        }
+        .neumorphism-button-light {
+            border-radius: 50px;
+            background: #e0e5ec;
+            box-shadow: 6px 6px 12px #c4c9d4, -6px -6px 12px #ffffff;
+        }
+        .neumorphism-button-light:hover {
+            box-shadow: inset 5px 5px 10px #c4c9d4, inset -5px -5px 10px #ffffff;
+        }
+        .neumorphism-button-dark {
+            border-radius: 50px;
+            background: #1e1e1e;
+            box-shadow: 6px 6px 12px #0a0a0a, -6px -6px 12px #2a2a2a;
+        }
+        .neumorphism-button-dark:hover {
+            box-shadow: inset 5px 5px 10px #0a0a0a, inset -5px -5px 10px #2a2a2a;
+        }
+        .line-item-light {
+            cursor: pointer;
+            padding: 1rem;
+            border-radius: 12px;
+            background-color: #f0f0f0;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease-in-out;
+        }
+        .line-item-light:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2), 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .line-item-light.selected {
+            background-color: #4f46e5;
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.5);
+            transform: translateY(-2px);
+        }
+        .line-item-dark {
+            cursor: pointer;
+            padding: 1rem;
+            border-radius: 12px;
+            background-color: #2a2a2a;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08);
+            transition: all 0.2s ease-in-out;
+        }
+        .line-item-dark:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.2), 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .line-item-dark.selected {
+            background-color: #4f46e5;
+            box-shadow: 0 0 15px rgba(79, 70, 229, 0.5);
+            transform: translateY(-2px);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        .light-mode ::-webkit-scrollbar-track {
+            background: #e0e5ec;
+        }
+        .light-mode ::-webkit-scrollbar-thumb {
+            background-color: #aeb4c0;
+            border-radius: 10px;
+            border: 2px solid #e0e5ec;
+        }
+        .light-mode ::-webkit-scrollbar-thumb:hover {
+            background-color: #9499a3;
+        }
+        .dark-mode ::-webkit-scrollbar-track {
+            background: #2a2a2a;
+        }
+        .dark-mode ::-webkit-scrollbar-thumb {
+            background-color: #4f46e5;
+            border-radius: 10px;
+            border: 2px solid #2a2a2a;
+        }
+        .dark-mode ::-webkit-scrollbar-thumb:hover {
+            background-color: #6366f1;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 flex flex-col items-center justify-center min-h-screen light-mode">
+    <div id="app" class="container mx-auto p-8 rounded-2xl shadow-lg neumorphism-inner-light">
+        <div class="flex justify-end mb-4">
+            <button id="theme-toggle" class="neumorphism-button-light p-2 rounded-full">
+                <svg id="moon-icon" class="w-6 h-6 text-gray-800" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+                <svg id="sun-icon" class="w-6 h-6 text-white hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+            </button>
+        </div>
+
+        <h1 class="text-3xl sm:text-4xl font-bold text-center mb-6 tracking-wide text-gray-800">图片信息提取工具</h1>
+        
+        <!-- 说明区域 -->
+        <p class="text-center text-gray-600 mb-8 leading-relaxed">
+            将包含信息的图片粘贴到下面的区域，工具将自动识别并提取文字。
+            <br>
+            你可以点击选择每一行文字进行复制。
+        </p>
+
+        <!-- 粘贴区域 -->
+        <div id="paste-area" class="border-4 border-dashed border-gray-400 rounded-xl p-8 text-center text-gray-500 hover:border-indigo-500 transition-colors duration-300 cursor-pointer neumorphism-inner-light">
+            <svg class="mx-auto h-12 w-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v12m4-4v4m4-4v4m-4-8v8m-4-8v8M9 5h6a2 2 0 012 2v10a2 2 0 01-2 2H9a2 2 0 01-2-2V7a2 2 0 012-2z"></path>
+            </svg>
+            <p class="mt-2 text-sm font-medium">请将图片粘贴到这里</p>
+        </div>
+        
+        <!-- 预览图片和加载指示器 -->
+        <div id="image-container" class="mt-8 hidden flex flex-col items-center p-6 rounded-xl shadow-md bg-[#e0e5ec]">
+            <img id="pasted-image" class="max-w-full rounded-lg" style="max-height: 400px; display: none;">
+            <div id="loading" class="mt-6 hidden flex flex-col items-center">
+                <div class="animate-spin rounded-full h-12 w-12 border-4 border-t-4 border-indigo-500 border-gray-400"></div>
+                <p class="mt-2 text-indigo-500 font-semibold">识别中，请稍候...</p>
+            </div>
+        </div>
+
+        <!-- 识别结果区域 -->
+        <div id="results-container" class="mt-8 hidden p-6 rounded-xl shadow-md bg-[#e0e5ec]">
+            <h2 class="text-xl font-semibold text-center mb-4 text-gray-800">提取结果</h2>
+            <div id="extracted-results" class="max-h-[500px] overflow-y-auto p-2 space-y-3">
+                <!-- 提取出的信息将在这里动态生成 -->
+            </div>
+            
+            <div class="flex justify-center mt-6">
+                <button id="copy-button" class="py-3 px-8 text-white font-bold rounded-full bg-indigo-600 hover:bg-indigo-700 transition-transform duration-200 transform hover:scale-105 shadow-lg focus:outline-none focus:ring-4 focus:ring-indigo-500/50">
+                    复制选中内容
+                </button>
+            </div>
+        </div>
+
+        <!-- 消息提示区域 -->
+        <div id="message-box" class="fixed bottom-8 left-1/2 -translate-x-1/2 p-4 rounded-lg shadow-xl hidden z-50 bg-gray-800 text-white transition-opacity duration-300">
+            <!-- 消息文本 -->
+        </div>
+
+    </div>
+
+    <script>
+        // 定义DOM元素
+        const body = document.body;
+        const themeToggle = document.getElementById('theme-toggle');
+        const moonIcon = document.getElementById('moon-icon');
+        const sunIcon = document.getElementById('sun-icon');
+        const appContainer = document.getElementById('app');
+        const imageCard = document.getElementById('image-container');
+        const resultsCard = document.getElementById('results-container');
+        const pasteArea = document.getElementById('paste-area');
+        const pastedImage = document.getElementById('pasted-image');
+        const loadingDiv = document.getElementById('loading');
+        const extractedResultsDiv = document.getElementById('extracted-results');
+        const copyButton = document.getElementById('copy-button');
+        const messageBox = document.getElementById('message-box');
+
+        // 主题切换功能
+        let isDarkMode = false;
+        themeToggle.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            if (isDarkMode) {
+                body.classList.remove('light-mode');
+                body.classList.add('dark-mode');
+                body.style.backgroundColor = '#121212';
+                body.style.color = '#e0e0e0';
+                appContainer.classList.remove('neumorphism-inner-light');
+                appContainer.classList.add('neumorphism-inner-dark');
+                pasteArea.classList.remove('neumorphism-inner-light');
+                pasteArea.classList.add('neumorphism-inner-dark');
+                themeToggle.classList.remove('neumorphism-button-light');
+                themeToggle.classList.add('neumorphism-button-dark');
+                imageCard.classList.remove('bg-[#e0e5ec]');
+                imageCard.classList.add('bg-[#2a2a2a]');
+                resultsCard.classList.remove('bg-[#e0e5ec]');
+                resultsCard.classList.add('bg-[#2a2a2a]');
+                moonIcon.classList.add('hidden');
+                sunIcon.classList.remove('hidden');
+                // 确保所有 .line-item 元素更新样式
+                document.querySelectorAll('.line-item').forEach(item => {
+                    item.classList.remove('line-item-light');
+                    item.classList.add('line-item-dark');
+                });
+            } else {
+                body.classList.remove('dark-mode');
+                body.classList.add('light-mode');
+                body.style.backgroundColor = '#e0e5ec';
+                body.style.color = '#3b3b3b';
+                appContainer.classList.remove('neumorphism-inner-dark');
+                appContainer.classList.add('neumorphism-inner-light');
+                pasteArea.classList.remove('neumorphism-inner-dark');
+                pasteArea.classList.add('neumorphism-inner-light');
+                themeToggle.classList.remove('neumorphism-button-dark');
+                themeToggle.classList.add('neumorphism-button-light');
+                imageCard.classList.remove('bg-[#2a2a2a]');
+                imageCard.classList.add('bg-[#e0e5ec]');
+                resultsCard.classList.remove('bg-[#2a2a2a]');
+                resultsCard.classList.add('bg-[#e0e5ec]');
+                moonIcon.classList.remove('hidden');
+                sunIcon.classList.add('hidden');
+                // 确保所有 .line-item 元素更新样式
+                document.querySelectorAll('.line-item').forEach(item => {
+                    item.classList.remove('line-item-dark');
+                    item.classList.add('line-item-light');
+                });
+            }
+        });
+
+        // 监听粘贴事件
+        document.addEventListener('paste', async (event) => {
+            const items = event.clipboardData.items;
+            for (const item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    const blob = item.getAsFile();
+                    if (blob) {
+                        handleImage(blob);
+                        return;
+                    }
+                }
+            }
+            showMessage('请粘贴有效的图片。', 'bg-red-500');
+        });
+
+        // 调用 LLM 进行文字识别
+        async function recognizeImageWithLLM(base64Data) {
+            const systemPrompt = "You are a highly accurate OCR engine. Your task is to extract all text content from the provided image. Do not add any extra information, just the extracted text.";
+            const userQuery = "Extract all text from this image.";
+            const apiKey = "";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=${apiKey}`;
+
+            const payload = {
+                contents: [{
+                    role: "user",
+                    parts: [
+                        { text: userQuery },
+                        {
+                            inlineData: {
+                                mimeType: "image/png",
+                                data: base64Data
+                            }
+                        }
+                    ]
+                }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                }
+            };
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            const text = result?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            return text.split('\n');
+        }
+
+        // 处理图片文件
+        async function handleImage(blob) {
+            loadingDiv.classList.remove('hidden');
+            imageCard.classList.remove('hidden');
+            pastedImage.style.display = 'block';
+            resultsCard.classList.add('hidden');
+            extractedResultsDiv.innerHTML = '';
+
+            const reader = new FileReader();
+            reader.onload = async function(event) {
+                pastedImage.src = event.target.result;
+                const base64Data = event.target.result.split(',')[1];
+                try {
+                    const lines = await recognizeImageWithLLM(base64Data);
+                    loadingDiv.classList.add('hidden');
+                    resultsCard.classList.remove('hidden');
+                    if (lines.length > 0) {
+                        displayResults(lines);
+                    } else {
+                        extractedResultsDiv.innerHTML = '<p class="text-center text-gray-500">未识别到任何文字。</p>';
+                    }
+                } catch (error) {
+                    console.error('识别失败:', error);
+                    loadingDiv.classList.add('hidden');
+                    showMessage('文字识别失败。', 'bg-red-500');
+                }
+            };
+            reader.readAsDataURL(blob);
+        }
+
+        // 显示识别出的行文本
+        function displayResults(lines) {
+            extractedResultsDiv.innerHTML = '';
+            
+            lines.forEach(text => {
+                if (text.trim()) {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = `line-item ${isDarkMode ? 'line-item-dark' : 'line-item-light'}`;
+                    itemDiv.addEventListener('click', () => {
+                        itemDiv.classList.toggle('selected');
+                    });
+                    const label = document.createElement('div');
+                    label.textContent = text.trim();
+                    label.className = 'line-text';
+                    itemDiv.appendChild(label);
+                    extractedResultsDiv.appendChild(itemDiv);
+                }
+            });
+        }
+
+        // 复制选中的内容
+        copyButton.addEventListener('click', () => {
+            const selectedText = [];
+            const selectedItems = document.querySelectorAll('.line-item.selected');
+            selectedItems.forEach(item => {
+                const text = item.querySelector('.line-text').textContent;
+                selectedText.push(text);
+            });
+            if (selectedText.length > 0) {
+                const textToCopy = selectedText.join('\n');
+                const tempTextarea = document.createElement('textarea');
+                tempTextarea.value = textToCopy;
+                document.body.appendChild(tempTextarea);
+                tempTextarea.select();
+                try {
+                    document.execCommand('copy');
+                    showMessage('内容已成功复制到剪贴板！', 'bg-green-600');
+                } catch (err) {
+                    console.error('复制失败:', err);
+                    showMessage('复制失败，请手动复制。', 'bg-red-500');
+                }
+                document.body.removeChild(tempTextarea);
+            } else {
+                showMessage('请先选择要复制的内容。', 'bg-yellow-500');
+            }
+        });
+
+        // 显示消息提示
+        function showMessage(message, colorClass) {
+            messageBox.textContent = message;
+            messageBox.className = `fixed bottom-8 left-1/2 -translate-x-1/2 p-4 text-white rounded-lg shadow-xl z-50 transition-opacity duration-300 opacity-0 ${colorClass}`;
+            messageBox.style.display = 'block';
+            setTimeout(() => {
+                messageBox.classList.remove('opacity-0');
+            }, 10);
+            setTimeout(() => {
+                messageBox.classList.add('opacity-0');
+                setTimeout(() => {
+                    messageBox.style.display = 'none';
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
